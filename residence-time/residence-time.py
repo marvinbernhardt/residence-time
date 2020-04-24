@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Can be used as a script to open a gmx select (Gromacs) output file
+   and create the autocorrelation function from it. This is often used
+   to calculate the residence time.
+"""
+
 import argparse
 import numpy as np
 import pandas as pd

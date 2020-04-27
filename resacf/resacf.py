@@ -43,17 +43,17 @@ def main():
 
 
 def get_lengths_of_True_spans(bool_array, outer_spans=False):
-    # indices + 1 because we take diff() to be difference to last element
+    assert len(bool_array) > 0
+    # indices + 1 because we take diff() to be difference to preceding element
     indices = np.argwhere(np.diff(bool_array, n=1)).flatten() + 1
-    if not outer_spans:
-        # ofset: start at nth span border
-        # if series starts with True -> offset = 2, else 1
-        offset = int(bool_array[0]) + 1
+    if outer_spans:
+        indices = np.hstack(([0], np.array(indices), [len(bool_array)]))
+    # ofset: start at nth span border
+    if len(indices >= 2):
+        offset = int(not bool_array[indices[0]])
         span_lengths = np.diff(indices)[offset::2]
     else:
-        indices_with_boundaries = np.hstack(([0], np.array(indices), [len(bool_array)]))
-        offset = int(not bool_array[0])
-        span_lengths = np.diff(indices_with_boundaries)[offset::2]
+        span_lengths = np.array([])
     return span_lengths
 
 

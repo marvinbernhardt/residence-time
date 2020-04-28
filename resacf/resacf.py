@@ -30,6 +30,10 @@ def main():
     parser.add_argument('-o', '--outer-spans', action='store_const',
                         const=True, default=False,
                         help='consider spans that are at begin or end of file')
+    parser.add_argument('-d', '--delay', action='store_const',
+                        const=True, default=False,
+                        help='delay all true spans by the -m time instead of filling '
+                             'small false blocks')
     # parse arguments
     args = parser.parse_args()
     # calculate acf
@@ -37,7 +41,8 @@ def main():
                                                 end_time=args.end,
                                                 max_False_time=args.max_false,
                                                 n_blocks=args.n_blocks,
-                                                outer_spans=args.outer_spans)
+                                                outer_spans=args.outer_spans,
+                                                delay=args.delay)
     # save results
     np.savetxt(args.outfile, np.vstack((t, acf, acf_std)).T)
 
@@ -70,6 +75,19 @@ def remove_small_False_spans(bool_array, max_False_span):
             bool_array[small_span[0]:small_span[1]] = True
 
 
+def delay_true_spans(bool_array, delay):
+    len_array = len(bool_array)
+    # jumps in the bool_array
+    jumps = np.argwhere(np.diff(bool_array, n=1)).flatten() + 1
+    jumps = np.hstack((jumps, len_array))
+    # iterate small spans
+    for span in np.vstack((jumps[:-1], jumps[1:])).T:
+        # if False span
+        if not bool_array[span[0]]:
+            # add delay
+            bool_array[span[0]:min(span[0]+delay, len_array)] = True
+
+
 def add_acf_from_span_lengths(t, acf, span_lengths):
     for span_len in span_lengths:
         # add picewise linear
@@ -77,7 +95,8 @@ def add_acf_from_span_lengths(t, acf, span_lengths):
 
 
 def calc_acf_from_select_data(filename, max_False_time=0.0, n_blocks=5,
-                              outer_spans=False, end_time=None, int_type='UInt16'):
+                              outer_spans=False, end_time=None, int_type='UInt16',
+                              delay=False):
     df = pd.read_csv(filename, sep=' ', header=None, skipinitialspace=True,
                      usecols=[0, 1])
     n_atoms_max = df[1].max()
@@ -105,7 +124,10 @@ def calc_acf_from_select_data(filename, max_False_time=0.0, n_blocks=5,
             selected = np.array((df == atom).any(axis=1), dtype=np.bool)
             # remove small False spans
             if max_False_span > 0:
-                remove_small_False_spans(selected, max_False_span)
+                if delay:
+                    delay_true_spans(selected, max_False_span)
+                else:
+                    remove_small_False_spans(selected, max_False_span)
             # lengths of continuous selection
             span_lengths = get_lengths_of_True_spans(selected, outer_spans=outer_spans)
             norm += np.sum(span_lengths)

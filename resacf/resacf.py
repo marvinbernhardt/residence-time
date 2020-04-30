@@ -98,13 +98,14 @@ def calc_acf_from_select_data(filename, max_False_time=0.0, n_blocks=5,
                               outer_spans=False, end_time=None, int_type='UInt16',
                               delay=False):
     df = pd.read_csv(filename, sep=' ', header=None, skipinitialspace=True,
-                     usecols=[0, 1])
+                     usecols=[0, 1], index_col=False, engine='python')
     n_atoms_max = df[1].max()
     dt = (df.iat[-1, 0] - df.iat[0, 0]) / (len(df[0]) - 1)
     n_rows = int(end_time / dt)
     max_False_span = int(max_False_time / dt)
     df = pd.read_csv(filename, sep=' ', header=None, skipinitialspace=True,
-                     names=range(n_atoms_max + 2), nrows=n_rows)
+                     names=range(n_atoms_max + 2), nrows=n_rows,
+                     index_col=False)
     del df[0]
     del df[1]
     # pandas UInt16 allows nan, up to 65,535
